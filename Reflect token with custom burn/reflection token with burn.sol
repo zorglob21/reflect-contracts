@@ -26,6 +26,8 @@ contract REFLECT2BURN1 is Context, IERC20, Ownable {
     string private _name;
     string private _symbol;
     uint8 private _decimals = 18;
+    uint8 public _reflectFee = 2;
+    uint8 public _burnFee = 2;
 
     constructor (string memory name, string memory symbol) public {
         _rOwned[_msgSender()] = _rTotal;
@@ -212,9 +214,15 @@ contract REFLECT2BURN1 is Context, IERC20, Ownable {
         _tFeeTotal = _tFeeTotal.add(tFee);
     }
 
+    function setFeesPercentage(uint8 reflect, uint8 burn) public onlyOwner{
+        require(reflect.add(burn) <= 20, 'taxes total value cannot be over 20%');
+        _reflectFee = reflect;
+        _burnFee = burn;
+    }
+
     function _takeBurn(uint256 tFee) internal {
-        
-    uint256 tBurn = tFee.div(2);
+    //we have to recalculate the tBurn because we couldn't return the value in the transfer function without triggering a stack too deep error
+    uint256 tBurn = tFee.div(_reflectFee).mul(_burnFee);
     uint256 currentRate =  _getRate();
     uint256 rBurn = tBurn.mul(currentRate); 
     _tOwned[_burnAddress] = _tOwned[_burnAddress].add(tBurn);
@@ -229,8 +237,8 @@ contract REFLECT2BURN1 is Context, IERC20, Ownable {
     }
 
     function _getTValues(uint256 tAmount) private pure returns (uint256, uint256) {
-        uint256 tFee = tAmount.div(100).mul(2);
-        uint256 tBurn = tAmount.div(100);
+        uint256 tFee = tAmount.div(100).mul(_reflectFee);
+        uint256 tBurn = tAmount.div(100).mul(_burnFee);
         uint256 total = tFee.add(tBurn);
         uint256 tTransferAmount = tAmount.sub(total);
         return (tTransferAmount, tFee);
