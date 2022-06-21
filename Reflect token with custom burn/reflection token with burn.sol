@@ -7,27 +7,28 @@ import "./IERC20.sol";
 
 
 
+
 contract REFLECT2BURN1 is Context, IERC20, Ownable {
     using SafeMath for uint256;
 
-    mapping (address => uint256) private _rOwned;
-    mapping (address => uint256) private _tOwned;
+    mapping (address => uint256) public _rOwned;
+    mapping (address => uint256) public _tOwned;
     mapping (address => mapping (address => uint256)) private _allowances;
 
     mapping (address => bool) private _isExcluded;
     address[] private _excluded;
    
     uint256 private constant MAX = ~uint256(0);
-    uint256 private constant _tTotal = 82000000000000*10**18;
-    uint256 private _rTotal = (MAX - (MAX % _tTotal));
-    uint256 private _tFeeTotal;
+    uint256 public constant _tTotal = 82000000000000*10**18;
+    uint256 public _rTotal = (MAX - (MAX % _tTotal));
+    uint256 public _tFeeTotal;
     address public _burnAddress = 0x000000000000000000000000000000000000dEaD;
 
     string private _name;
     string private _symbol;
     uint8 private _decimals = 18;
-    uint8 public _reflectFee = 2;
-    uint8 public _burnFee = 2;
+    uint256 public _reflectiontFee = 2;
+    uint256 public _burnFee = 2;
 
     constructor (string memory name, string memory symbol) public {
         _rOwned[_msgSender()] = _rTotal;
@@ -214,15 +215,15 @@ contract REFLECT2BURN1 is Context, IERC20, Ownable {
         _tFeeTotal = _tFeeTotal.add(tFee);
     }
 
-    function setFeesPercentage(uint8 reflect, uint8 burn) public onlyOwner{
-        require(reflect.add(burn) <= 20, 'taxes total value cannot be over 20%');
-        _reflectFee = reflect;
+    function setFeesPercentage(uint256 reflection, uint256 burn) public onlyOwner{
+        require(reflection.add(burn) <= 20, 'taxes total value cannot be over 20%');
+        _reflectiontFee = reflection;
         _burnFee = burn;
     }
 
     function _takeBurn(uint256 tFee) internal {
     //we have to recalculate the tBurn because we couldn't return the value in the transfer function without triggering a stack too deep error
-    uint256 tBurn = tFee.div(_reflectFee).mul(_burnFee);
+    uint256 tBurn = tFee.div(_reflectiontFee).mul(_burnFee);
     uint256 currentRate =  _getRate();
     uint256 rBurn = tBurn.mul(currentRate); 
     _tOwned[_burnAddress] = _tOwned[_burnAddress].add(tBurn);
@@ -236,8 +237,8 @@ contract REFLECT2BURN1 is Context, IERC20, Ownable {
         return (rAmount, rTransferAmount, rFee, tTransferAmount, tFee);
     }
 
-    function _getTValues(uint256 tAmount) private pure returns (uint256, uint256) {
-        uint256 tFee = tAmount.div(100).mul(_reflectFee);
+    function _getTValues(uint256 tAmount) private view returns (uint256, uint256) {
+        uint256 tFee = tAmount.div(100).mul(_reflectiontFee);
         uint256 tBurn = tAmount.div(100).mul(_burnFee);
         uint256 total = tFee.add(tBurn);
         uint256 tTransferAmount = tAmount.sub(total);
